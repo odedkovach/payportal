@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: financial-dashboard
+    runtime: node
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+

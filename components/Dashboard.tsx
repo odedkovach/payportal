@@ -153,11 +153,11 @@ export const Dashboard = ({ data, onClose }: DashboardProps) => {
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-[rgb(184,198,90)]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase">Amount</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">

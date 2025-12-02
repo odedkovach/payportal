@@ -282,10 +282,10 @@ export default function App() {
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden animate-fade-in">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-white">
+                <thead className="bg-[rgb(184,198,90)]">
                   <tr>
                     {['Reference', 'Status', 'Customer', 'Method', 'Amount', 'Fee', 'Net', 'Charged on'].map((header) => (
-                      <th key={header} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th key={header} scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                         {header}
                       </th>
                     ))}

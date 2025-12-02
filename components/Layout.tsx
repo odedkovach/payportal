@@ -39,11 +39,11 @@ export const Layout = ({ children }: LayoutProps) => {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Top Header Bar */}
-            <header className="bg-[#8DB93C] text-white h-[60px] flex items-center justify-between px-6 flex-shrink-0 shadow-md">
+            <header className="bg-[rgb(184,198,90)] text-white h-[60px] flex items-center justify-between px-6 flex-shrink-0 shadow-md">
                 {/* Left: Company Name with Dropdown */}
                 <div className="flex items-center space-x-2 cursor-pointer hover:opacity-90 transition-opacity">
                     <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center">
-                        <span className="text-[#8DB93C] text-sm font-bold">🐘</span>
+                        <span className="text-[rgb(184,198,90)] text-sm font-bold">🐘</span>
                     </div>
                     <span className="font-semibold text-base">Little Green Elephants</span>
                     <IconChevronDown className="w-4 h-4" />

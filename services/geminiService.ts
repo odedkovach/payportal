@@ -3,7 +3,7 @@ import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { Transaction, AIResponse } from "../types";
 
 // Initialize Gemini
-const apiKey = process.env.API_KEY || '';
+const apiKey = import.meta.env.VITE_API_KEY || '';
 console.log('API Key being used:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT FOUND');
 const ai = new GoogleGenAI({ apiKey });
 

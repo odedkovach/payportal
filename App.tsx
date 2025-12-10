@@ -1,10 +1,12 @@
 
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { MOCK_TRANSACTIONS } from './constants';
 import { Transaction, DashboardData } from './types';
 import { processUserPrompt } from './services/geminiService';
 import { Dashboard } from './components/Dashboard';
 import { TransactionModal } from './components/TransactionModal';
+import { AgentModal } from './components/AgentModal';
 import {
   IconBell,
   IconSettings,
@@ -27,7 +29,14 @@ import {
   IconChevronRight,
   IconCoins,
   IconClock,
-  IconChevronLeft as IconBack
+  IconChevronLeft as IconBack,
+  IconTools,
+  IconCanvas,
+  IconLifebuoy,
+  IconLightbulb,
+  IconSearch,
+  IconPlus,
+  IconAgent
 } from './components/Icons';
 
 // --- Header Component ---
@@ -144,6 +153,97 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+// --- Tool Suggestions Data ---
+const TOOL_SUGGESTIONS: Record<string, Record<string, { icon: string; text: string }[]>> = {
+  canvas: {
+    suggested: [
+      { icon: '📄', text: 'Create visual dashboard of transaction trends' },
+      { icon: '📊', text: 'Design flowchart for payment processing' },
+      { icon: '✨', text: 'Sketch wireframe for invoice details modal' }
+    ],
+    reports: [
+      { icon: '📈', text: 'Generate visual report of monthly revenue' },
+      { icon: '🎨', text: 'Create infographic of payment methods breakdown' }
+    ],
+    actions: [
+      { icon: '🖼️', text: 'Export current view as image' },
+      { icon: '📐', text: 'Create custom chart layout' }
+    ]
+  },
+  support: {
+    suggested: [
+      { icon: '💬', text: 'Contact support about failed transactions' },
+      { icon: '📚', text: 'Find API documentation for payment integration' },
+      { icon: '🐛', text: 'Report issue with transaction export' }
+    ],
+    reports: [
+      { icon: '📋', text: 'View support ticket history' },
+      { icon: '📊', text: 'Generate support metrics report' }
+    ],
+    actions: [
+      { icon: '📞', text: 'Schedule call with support team' },
+      { icon: '📧', text: 'Send feedback about dashboard' }
+    ]
+  },
+  'financial insights': {
+    suggested: [
+      { icon: '💡', text: 'Analyze payment patterns for Q4 2024' },
+      { icon: '📊', text: 'Identify unusual transaction spikes' },
+      { icon: '🔍', text: 'Find opportunities to reduce refund rate' }
+    ],
+    reports: [
+      { icon: '📈', text: 'Generate cash flow forecast' },
+      { icon: '💰', text: 'Create profitability analysis' }
+    ],
+    actions: [
+      { icon: '⚡', text: 'Run automated insights scan' },
+      { icon: '🎯', text: 'Set up custom financial alerts' }
+    ]
+  },
+  'deep search': {
+    suggested: [
+      { icon: '🔎', text: 'Search all invoices containing "Google Ads"' },
+      { icon: '📅', text: 'Find transactions from last Black Friday' },
+      { icon: '💳', text: 'Search by card ending in 4242' }
+    ],
+    reports: [
+      { icon: '📊', text: 'Advanced search with multiple filters' },
+      { icon: '🔍', text: 'Search transaction descriptions and notes' }
+    ],
+    actions: [
+      { icon: '⭐', text: 'Save current search query' },
+      { icon: '🔔', text: 'Create alert for search criteria' }
+    ]
+  },
+  agent: {
+    suggested: [
+      { icon: '🤖', text: 'Automate monthly invoice reconciliation' },
+      { icon: '⚡', text: 'Set up automated refund processing' },
+      { icon: '📧', text: 'Create email automation for overdue invoices' },
+      { icon: '🔔', text: 'Auto-notify customers of successful payments' },
+      { icon: '💰', text: 'Automatically process pending payouts over £1000' },
+      { icon: '📅', text: 'Schedule weekly revenue summary emails' },
+      { icon: '🚨', text: 'Alert me when failed transactions exceed 5%' },
+      { icon: '🎯', text: 'Auto-categorize transactions by merchant type' }
+    ],
+    reports: [
+      { icon: '📊', text: 'View agent activity log' },
+      { icon: '🎯', text: 'Generate automation performance report' },
+      { icon: '⏱️', text: 'Show time saved by automation this month' },
+      { icon: '📈', text: 'Automation success rate analytics' },
+      { icon: '💡', text: 'Get automation improvement suggestions' }
+    ],
+    actions: [
+      { icon: '🔧', text: 'Configure new automation workflow' },
+      { icon: '▶️', text: 'Start agent training mode' },
+      { icon: '⏸️', text: 'Pause all active automations' },
+      { icon: '🗑️', text: 'Delete inactive automation rules' },
+      { icon: '📋', text: 'Export automation configuration' },
+      { icon: '🔄', text: 'Sync automations across all accounts' }
+    ]
+  }
+};
+
 // --- Main App ---
 export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
@@ -156,6 +256,33 @@ export default function App() {
 
   // State for Modal
   const [modalInvoiceId, setModalInvoiceId] = useState<string | null>(null);
+
+  // State for Tools Dropdown
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const [suggestionCategory, setSuggestionCategory] = useState('suggested');
+  const toolsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // State for Agent Modal
+  const [showAgentModal, setShowAgentModal] = useState(false);
+  const [overdueInvoices, setOverdueInvoices] = useState<Transaction[]>([]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (toolsDropdownRef.current && !toolsDropdownRef.current.contains(event.target as Node)) {
+        setShowToolsMenu(false);
+      }
+    };
+
+    if (showToolsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showToolsMenu]);
 
   // Filter transactions based on query
   const handleSearch = useCallback(async () => {
@@ -206,6 +333,14 @@ export default function App() {
         />
       )}
 
+      {/* Agent Modal */}
+      {showAgentModal && (
+        <AgentModal
+          onClose={() => setShowAgentModal(false)}
+          overdueInvoices={overdueInvoices}
+        />
+      )}
+
       <main className="max-w-[1400px] mx-auto px-4 py-8">
         <h1 className="sr-only">Balance and Activity</h1>
 
@@ -218,30 +353,178 @@ export default function App() {
             <button className="text-gray-500 hover:text-gray-700 px-4 py-1.5 rounded-md text-sm font-medium">Payouts</button>
           </div>
 
-          <div className="flex-1 max-w-xl mx-4 relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <IconSparkles className="h-4 w-4 text-purple-500 group-focus-within:animate-pulse" />
-            </div>
-            <input
-              type="text"
-              className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 sm:text-sm transition-all shadow-sm"
-              placeholder="Ask AI: 'Filter refunded' or 'Find invoice INV-123'"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
-            <button
-              onClick={handleSearch}
-              className="absolute inset-y-0 right-0 pr-2 flex items-center"
-            >
-              <div className={`p-1.5 rounded-md ${isProcessing ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'} text-purple-600 transition-colors`}>
-                {isProcessing ? (
-                  <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
-                ) : (
-                  <IconArrowRight className="h-4 w-4" />
-                )}
+          <div className="flex-1 max-w-xl mx-4 relative" ref={toolsDropdownRef}>
+            {/* Expandable AI Input Container */}
+            <div className={`relative group border border-gray-300 rounded-lg bg-white shadow-sm transition-all duration-300 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 ${selectedTool ? 'min-h-[100px]' : 'h-auto'
+              }`}>
+              {/* Top Row: Sparkles + Plus Button + Input + Submit */}
+              <div className="relative flex items-center">
+                <div className="absolute left-3 flex items-center pointer-events-none">
+                  <IconSparkles className="h-4 w-4 text-purple-500 group-focus-within:animate-pulse" />
+                </div>
+
+                {/* Tools Button inside input - LEFT SIDE */}
+                <div className="absolute left-10 flex items-center pl-2">
+                  <button
+                    onClick={() => setShowToolsMenu(!showToolsMenu)}
+                    className="flex items-center justify-center w-6 h-6 hover:bg-gray-100 rounded-md transition-colors"
+                    aria-label="Tools menu"
+                  >
+                    <IconPlus className="h-4 w-4 text-gray-600" />
+                  </button>
+                </div>
+
+                <input
+                  type="text"
+                  className="block w-full pl-20 pr-12 py-2.5 bg-transparent border-0 leading-5 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-0 sm:text-sm"
+                  placeholder="Ask AI: 'Filter refunded' or 'Find invoice INV-123'"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+
+                {/* Submit Button - RIGHT SIDE */}
+                <button
+                  onClick={handleSearch}
+                  className="absolute right-2 flex items-center"
+                >
+                  <div className="p-1.5 rounded-md bg-white hover:bg-gray-50 text-purple-600 transition-colors">
+                    {isProcessing ? (
+                      <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                    ) : (
+                      <IconArrowRight className="h-4 w-4" />
+                    )}
+                  </div>
+                </button>
               </div>
-            </button>
+
+              {/* Tool Badge INSIDE input box */}
+              {selectedTool && (
+                <div className="px-4 pb-2 animate-fade-in">
+                  <div className="inline-flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded-md">
+                    <span className="text-xs font-medium text-blue-700 capitalize">{selectedTool}</span>
+                    <button
+                      onClick={() => setSelectedTool(null)}
+                      className="text-blue-400 hover:text-blue-600 transition-colors"
+                      aria-label="Clear tool selection"
+                    >
+                      <IconX className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Tools Dropdown Menu - WHITE BACKGROUND */}
+            {showToolsMenu && (
+              <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50 animate-fade-in">
+                <div className="py-2">
+                  <button
+                    onClick={() => {
+                      setSelectedTool('canvas');
+                      setShowToolsMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-800 hover:bg-gray-100 transition-colors"
+                  >
+                    <IconCanvas className="h-5 w-5 text-gray-600" />
+                    <span className="text-sm font-medium">Canvas</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedTool('support');
+                      setShowToolsMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-800 hover:bg-gray-100 transition-colors"
+                  >
+                    <IconLifebuoy className="h-5 w-5 text-gray-600" />
+                    <span className="text-sm font-medium">Support</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedTool('financial insights');
+                      setShowToolsMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-800 hover:bg-gray-100 transition-colors"
+                  >
+                    <IconLightbulb className="h-5 w-5 text-gray-600" />
+                    <span className="text-sm font-medium">Financial Insights</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedTool('deep search');
+                      setShowToolsMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-800 hover:bg-gray-100 transition-colors"
+                  >
+                    <IconSearch className="h-5 w-5 text-gray-600" />
+                    <span className="text-sm font-medium">Deep Search</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedTool('agent');
+                      setShowToolsMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-gray-800 hover:bg-gray-100 transition-colors"
+                  >
+                    <IconAgent className="h-5 w-5 text-gray-600" />
+                    <span className="text-sm font-medium">Agent</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Floating Suggestions Panel - Overlays table */}
+            {selectedTool && (
+              <div className="absolute left-4 right-4 top-full mt-2 z-40">
+                <div className="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden max-w-xl mx-auto animate-fade-in">
+                  {/* Category Tabs */}
+                  <div className="flex items-center gap-6 px-4 pt-4 border-b border-gray-200">
+                    {['suggested', 'reports', 'actions'].map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => setSuggestionCategory(category)}
+                        className={`pb-3 text-sm font-medium transition-colors ${suggestionCategory === category
+                          ? 'text-blue-600 border-b-2 border-blue-600 -mb-px'
+                          : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                      >
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Suggestion Cards */}
+                  <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
+                    {TOOL_SUGGESTIONS[selectedTool]?.[suggestionCategory]?.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          // Special handling for agent automation
+                          if (suggestion.text === 'Create email automation for overdue invoices') {
+                            // Filter transactions that are NOT in 'Charged' status
+                            const overdue = MOCK_TRANSACTIONS.filter(t => t.status !== 'Charged' && t.status !== 'Paid into bank');
+                            setOverdueInvoices(overdue);
+                            setShowAgentModal(true);
+                            setSelectedTool(null); // Close the suggestions
+                          } else {
+                            setSearchQuery(suggestion.text);
+                          }
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition-colors group"
+                      >
+                        <span className="text-base">{suggestion.icon}</span>
+                        <span className="text-sm text-gray-700 text-left flex-1">{suggestion.text}</span>
+                        <IconArrowRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                      </button>
+                    )) || (
+                        <div className="text-sm text-gray-500 text-center py-8">
+                          No suggestions available for this category
+                        </div>
+                      )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center space-x-3">

@@ -7,6 +7,7 @@ export interface Transaction {
   notes: string | null;
   status: TransactionStatus;
   customer: string;
+  customerEmail?: string;
   method: {
     type: 'Visa' | 'Mastercard';
     last4: string;

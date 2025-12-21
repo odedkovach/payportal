@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { MOCK_TRANSACTIONS } from './constants';
 import { Transaction, DashboardData } from './types';
 import { processUserPrompt } from './services/geminiService';
-import { Dashboard } from './components/Dashboard';
+import { ModernDashboard as Dashboard } from './components/ModernDashboard';
 import { TransactionModal } from './components/TransactionModal';
 import { AgentModal } from './components/AgentModal';
 import { CustomerExploreModal } from './components/CustomerExploreModal';

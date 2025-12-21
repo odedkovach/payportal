@@ -153,6 +153,29 @@ export const processUserPrompt = async (
       if (sortedCustomers.length > 0) {
         result.dashboardData.topCustomers = sortedCustomers;
       }
+
+      // --- Add 4th KPI: Avg. Transaction Value ---
+      // Calculate average from valid transactions
+      let totalAmount = 0;
+      let count = 0;
+      allTransactions.forEach(t => {
+        if (t.status === 'Charged' || t.status === 'Paid into bank') {
+          totalAmount += t.amount;
+          count++;
+        }
+      });
+
+      const avgValue = count > 0 ? totalAmount / count : 0;
+
+      // Ensure we have at least 4 metrics
+      if (result.dashboardData.metrics.length < 4) {
+        result.dashboardData.metrics.push({
+          label: 'Avg. Transaction Value',
+          value: `£${avgValue.toFixed(2)}`,
+          change: '+2.5%', // Mock trend for now
+          trend: 'up'
+        });
+      }
     }
 
     return result;

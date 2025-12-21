@@ -151,3 +151,20 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     chargedOn: '26/09/25 15:10',
   },
 ];
+
+export const MOCK_REVENUE_DATA = [
+  { name: 'Jan 1', value: 4000 },
+  { name: 'Jan 5', value: 3000 },
+  { name: 'Jan 10', value: 2000 },
+  { name: 'Jan 15', value: 2780 },
+  { name: 'Jan 20', value: 1890 },
+  { name: 'Jan 25', value: 2390 },
+  { name: 'Jan 30', value: 3490 },
+  { name: 'Feb 1', value: 4200 },
+  { name: 'Feb 5', value: 3800 },
+  { name: 'Feb 10', value: 5000 },
+  { name: 'Feb 15', value: 4800 },
+  { name: 'Feb 20', value: 5500 },
+  { name: 'Feb 25', value: 6000 },
+  { name: 'Feb 28', value: 5800 },
+];

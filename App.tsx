@@ -7,6 +7,7 @@ import { processUserPrompt } from './services/geminiService';
 import { Dashboard } from './components/Dashboard';
 import { TransactionModal } from './components/TransactionModal';
 import { AgentModal } from './components/AgentModal';
+import { CustomerExploreModal } from './components/CustomerExploreModal';
 import {
   IconBell,
   IconSettings,
@@ -204,7 +205,8 @@ const TOOL_SUGGESTIONS: Record<string, Record<string, { icon: string; text: stri
     suggested: [
       { icon: '🔎', text: 'Search all invoices containing "Google Ads"' },
       { icon: '📅', text: 'Find transactions from last Black Friday' },
-      { icon: '💳', text: 'Search by card ending in 4242' }
+      { icon: '💳', text: 'Search by card ending in 4242' },
+      { icon: '👤', text: 'Explore your customers' }
     ],
     reports: [
       { icon: '📊', text: 'Advanced search with multiple filters' },
@@ -266,6 +268,9 @@ export default function App() {
   // State for Agent Modal
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [overdueInvoices, setOverdueInvoices] = useState<Transaction[]>([]);
+
+  // State for Customer Explore Modal
+  const [showCustomerExploreModal, setShowCustomerExploreModal] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -338,6 +343,14 @@ export default function App() {
         <AgentModal
           onClose={() => setShowAgentModal(false)}
           overdueInvoices={overdueInvoices}
+        />
+      )}
+
+      {/* Customer Explore Modal */}
+      {showCustomerExploreModal && (
+        <CustomerExploreModal
+          onClose={() => setShowCustomerExploreModal(false)}
+          allTransactions={MOCK_TRANSACTIONS}
         />
       )}
 
@@ -505,6 +518,10 @@ export default function App() {
                             const overdue = MOCK_TRANSACTIONS.filter(t => t.status !== 'Charged' && t.status !== 'Paid into bank');
                             setOverdueInvoices(overdue);
                             setShowAgentModal(true);
+                            setSelectedTool(null); // Close the suggestions
+                          } else if (suggestion.text === 'Explore your customers') {
+                            // Open customer exploration modal
+                            setShowCustomerExploreModal(true);
                             setSelectedTool(null); // Close the suggestions
                           } else {
                             setSearchQuery(suggestion.text);

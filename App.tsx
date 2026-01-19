@@ -2,9 +2,10 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { MOCK_TRANSACTIONS } from './constants';
-import { Transaction, DashboardData } from './types';
+import { Transaction, DashboardData, ReconciliationData, ReconciliationItem } from './types';
 import { processUserPrompt } from './services/geminiService';
 import { ModernDashboard as Dashboard } from './components/ModernDashboard';
+import { ReconciliationDashboard } from './components/ReconciliationDashboard';
 import { TransactionModal } from './components/TransactionModal';
 import { AgentModal } from './components/AgentModal';
 import { CustomerExploreModal } from './components/CustomerExploreModal';
@@ -129,7 +130,7 @@ const StatusBadge = ({ status }: { status: string }) => {
       Icon = IconRefund;
       break;
     case 'Charged':
-      styles = "bg-green-50 text-green-700 border border-green-200";
+      styles = "bg-gray-100 text-gray-800 border border-gray-200";
       Icon = IconCheck;
       break;
     case 'Cancelled':
@@ -253,8 +254,9 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // State for AI Views
-  const [viewMode, setViewMode] = useState<'list' | 'dashboard'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'dashboard' | 'reconciliation'>('list');
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [reconciliationData, setReconciliationData] = useState<ReconciliationData | null>(null);
 
   // State for Modal
   const [modalInvoiceId, setModalInvoiceId] = useState<string | null>(null);
@@ -268,6 +270,7 @@ export default function App() {
   // State for Agent Modal
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [overdueInvoices, setOverdueInvoices] = useState<Transaction[]>([]);
+  const [chaseItem, setChaseItem] = useState<ReconciliationItem | null>(null);
 
   // State for Customer Explore Modal
   const [showCustomerExploreModal, setShowCustomerExploreModal] = useState(false);
@@ -299,31 +302,55 @@ export default function App() {
 
     setIsProcessing(true);
 
-    // Use Gemini for intelligent filtering OR generation OR details
-    const response = await processUserPrompt(searchQuery, MOCK_TRANSACTIONS);
+    try {
+      // Use Gemini for intelligent filtering OR generation OR details
+      const response = await processUserPrompt(searchQuery, MOCK_TRANSACTIONS);
+      console.log("AI Response:", response);
 
-    if (response.type === 'DETAILS' && response.detailsId) {
-      // Show modal logic
-      setModalInvoiceId(response.detailsId);
-      // We don't change viewMode, we just pop the modal over whatever view is active
-    } else if (response.type === 'DASHBOARD' && response.dashboardData) {
-      setDashboardData(response.dashboardData);
-      setViewMode('dashboard');
-    } else {
-      // It's a filter request
-      const ids = new Set(response.filteredIds || []);
-      const filtered = MOCK_TRANSACTIONS.filter(t => ids.has(t.id));
-      setTransactions(filtered);
+      if (response.type === 'DETAILS' && response.detailsId) {
+        // Show modal logic
+        setModalInvoiceId(response.detailsId);
+        // We don't change viewMode, we just pop the modal over whatever view is active
+      } else if (response.type === 'DASHBOARD' && response.dashboardData) {
+        setDashboardData(response.dashboardData);
+        setViewMode('dashboard');
+      } else if (response.type === 'RECONCILIATION_DASHBOARD' && response.reconciliationData) {
+        setReconciliationData(response.reconciliationData);
+        setViewMode('reconciliation');
+      } else {
+        // It's a filter request
+        const ids = new Set(response.filteredIds || []);
+        const filtered = MOCK_TRANSACTIONS.filter(t => ids.has(t.id));
+        setTransactions(filtered);
+        setViewMode('list');
+      }
+    } catch (error) {
+      console.error("Error in handleSearch:", error);
+      // Fallback to simple text search if AI fails hard
+      const lowerQuery = searchQuery.toLowerCase();
+      const fallbackFiltered = MOCK_TRANSACTIONS.filter(t =>
+        t.customer.toLowerCase().includes(lowerQuery) ||
+        t.reference.toLowerCase().includes(lowerQuery) ||
+        t.amount.toString().includes(lowerQuery)
+      );
+      setTransactions(fallbackFiltered);
       setViewMode('list');
+    } finally {
+      setIsProcessing(false);
     }
-
-    setIsProcessing(false);
   }, [searchQuery]);
 
   const handleReset = () => {
     setViewMode('list');
     setSearchQuery('');
     setTransactions(MOCK_TRANSACTIONS);
+  };
+
+  // Handle Chase Payment from Reconciliation Dashboard
+  const handleChasePayment = (item: ReconciliationItem) => {
+    setChaseItem(item);
+    setOverdueInvoices([]); // Clear bulk invoices
+    setShowAgentModal(true);
   };
 
   return (
@@ -341,8 +368,12 @@ export default function App() {
       {/* Agent Modal */}
       {showAgentModal && (
         <AgentModal
-          onClose={() => setShowAgentModal(false)}
+          onClose={() => {
+            setShowAgentModal(false);
+            setChaseItem(null); // Clear chase item when closing
+          }}
           overdueInvoices={overdueInvoices}
+          chaseItem={chaseItem || undefined}
         />
       )}
 
@@ -545,7 +576,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center space-x-3">
-            {viewMode === 'dashboard' ? (
+            {viewMode === 'dashboard' || viewMode === 'reconciliation' ? (
               <button
                 onClick={handleReset}
                 className="flex items-center space-x-2 bg-blue-50 border border-blue-200 text-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-100 shadow-sm transition-colors"
@@ -578,11 +609,17 @@ export default function App() {
             data={dashboardData}
             onClose={handleReset}
           />
+        ) : viewMode === 'reconciliation' && reconciliationData ? (
+          <ReconciliationDashboard
+            data={reconciliationData}
+            onClose={handleReset}
+            onChasePayment={handleChasePayment}
+          />
         ) : (
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden animate-fade-in">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-[rgb(184,198,90)]">
+                <thead className="bg-[#b91c1c]">
                   <tr>
                     {['Reference', 'Status', 'Customer', 'Method', 'Amount', 'Fee', 'Net', 'Charged on'].map((header) => (
                       <th key={header} scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">

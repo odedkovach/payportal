@@ -224,7 +224,7 @@ export const CustomerExploreModal = ({ onClose, allTransactions }: CustomerExplo
                     {(stage === 'confirmation' || stage === 'thinking2' || stage === 'customerList' || stage === 'searching' || stage === 'results') && (
                         <div className="mb-6 animate-fade-in">
                             <div className="flex items-start space-x-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shrink-0">
                                     <IconCheck className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="flex-1">
@@ -400,7 +400,7 @@ export const CustomerExploreModal = ({ onClose, allTransactions }: CustomerExplo
                                         <p className="text-xs text-gray-600 mb-1">Total Transactions</p>
                                         <p className="text-2xl font-bold text-gray-900">{searchResult.transactionSummary.totalTransactions}</p>
                                     </div>
-                                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-lg">
+                                    <div className="bg-gradient-to-br from-gray-50 to-slate-100 p-4 rounded-lg">
                                         <p className="text-xs text-gray-600 mb-1">Total Spent</p>
                                         <p className="text-2xl font-bold text-gray-900">£{searchResult.transactionSummary.totalSpent.toFixed(2)}</p>
                                     </div>
@@ -430,10 +430,10 @@ export const CustomerExploreModal = ({ onClose, allTransactions }: CustomerExplo
                                         <p className="text-sm font-semibold text-gray-700 mb-2">Status Breakdown:</p>
                                         <div className="flex flex-wrap gap-2">
                                             {Object.entries(searchResult.transactionSummary.statusBreakdown).map(([status, count]) => (
-                                                <span key={status} className={`px-3 py-1 rounded-full text-xs font-medium ${status === 'Charged' ? 'bg-green-100 text-green-700' :
-                                                        status === 'Refunded' ? 'bg-orange-100 text-orange-700' :
-                                                            status === 'Failed' ? 'bg-red-100 text-red-700' :
-                                                                'bg-gray-100 text-gray-700'
+                                                <span key={status} className={`px-3 py-1 rounded-full text-xs font-medium ${status === 'Charged' ? 'bg-gray-100 text-gray-800' :
+                                                    status === 'Refunded' ? 'bg-orange-100 text-orange-700' :
+                                                        status === 'Failed' ? 'bg-red-100 text-red-700' :
+                                                            'bg-gray-100 text-gray-700'
                                                     }`}>
                                                     {status}: {count}
                                                 </span>
@@ -454,10 +454,10 @@ export const CustomerExploreModal = ({ onClose, allTransactions }: CustomerExplo
                                                 <p className="text-xs text-gray-500">{tx.chargedOn}</p>
                                             </div>
                                             <div className="flex items-center space-x-3">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${tx.status === 'Charged' ? 'bg-green-50 text-green-700' :
-                                                        tx.status === 'Refunded' ? 'bg-orange-50 text-orange-700' :
-                                                            tx.status === 'Failed' ? 'bg-red-50 text-red-700' :
-                                                                'bg-gray-50 text-gray-700'
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${tx.status === 'Charged' ? 'bg-gray-100 text-gray-800' :
+                                                    tx.status === 'Refunded' ? 'bg-orange-50 text-orange-700' :
+                                                        tx.status === 'Failed' ? 'bg-red-50 text-red-700' :
+                                                            'bg-gray-50 text-gray-700'
                                                     }`}>
                                                     {tx.status}
                                                 </span>

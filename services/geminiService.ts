@@ -21,7 +21,7 @@ export const processUserPrompt = async (
   }
 
   try {
-    const model = 'gemini-2.5-flash';
+    const model = 'gemini-2.5-flash'; // Original model
 
     // We send a simplified version of the data to save tokens
     const simplifiedData = allTransactions.map(t => ({
@@ -41,29 +41,27 @@ export const processUserPrompt = async (
       CURRENT DATASET (Sample):
       ${JSON.stringify(simplifiedData.slice(0, 5))}...
 
-      YOUR TASK:
-      Determine if the user wants to FILTER the list, Generate a DASHBOARD, or View DETAILS of a specific invoice.
+      CONTENT:
+      Determine if the user wants to FILTER, Generate a standard DASHBOARD, Generate a RECONCILIATION_DASHBOARD (specific financial deep dive), or View DETAILS.
 
       INTENT DETECTION RULES:
-      1. DETAILS INTENT: If the query asks to "find invoice X", "search invoice Y", "show transaction Z", or provides a specific Invoice ID (e.g. INV-...).
-         -> ACTION: Return type="DETAILS" and extract the ID string into "detailsId".
-         
-      2. DASHBOARD INTENT: If the query contains words like "dashboard", "summarize", "overview", "chart", "graph", "report", "analyze", "October" (referring to a time period summary), or asks for aggregate stats.
-         -> ACTION: Return type="DASHBOARD" and generate synthetic "dashboardData" that matches the query context.
-         -> NOTE: "topCustomers" will be calculated by the system, but please provide a structure for it.
-      
-      3. FILTER INTENT: If the query asks to find specific items based on criteria (status, amount, date) but NOT a single specific invoice ID display.
-         -> ACTION: Return type="FILTER" and provide "filteredIds".
+      1. DETAILS INTENT: Specific invoice or transaction lookup.
+      2. RECONCILIATION_DASHBOARD INTENT: If the user asks for "reconciliation", "reconcile", "payment tracking", "debt collection", "chasing payments", "December 2025 reconciliation".
+         -> ACTION: Return type="RECONCILIATION_DASHBOARD".
+         -> GENERATE: "reconciliationData" with realistic, coherent financial data (Total Expected ~£150k, Received ~£120k).
+            - Aging: <30 days, 30-60 days, 60-90 days, >90 days.
+            - Discrepancies: 5-10 items with 'Overdue', 'Partial', 'Unmatched' status.
+      3. DASHBOARD INTENT: General overview, "dashboard", "summary".
+      4. FILTER INTENT: Criteria-based search.
 
       OUTPUT SCHEMA RULES:
-      - If DETAILS: Set "detailsId" to the invoice ID extracted from the prompt (e.g., "INV-123456789").
-      - If DASHBOARD: You must generate "dashboardData" with fully populated arrays for charts.
-      - If FILTER: You must generate "filteredIds".
-
+      - If RECONCILIATION_DASHBOARD: Populate "reconciliationData".
+      - "reconciliationData" MUST have: title, period, summary (totalExpected, totalReceived, outstanding, reconciliationRate), aging (buckets), discrepancies (list), methodBreakdown.
+      
       GENERATE JSON RESPONSE ONLY.
     `;
 
-    const response = await ai.models.generateContent({
+    const responsePromise = ai.models.generateContent({
       model,
       contents: prompt,
       config: {
@@ -71,48 +69,52 @@ export const processUserPrompt = async (
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            type: { type: Type.STRING, enum: ["FILTER", "DASHBOARD", "DETAILS"] },
-            filteredIds: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING }
-            },
+            type: { type: Type.STRING, enum: ["FILTER", "DASHBOARD", "DETAILS", "RECONCILIATION_DASHBOARD"] },
+            filteredIds: { type: Type.ARRAY, items: { type: Type.STRING } },
             detailsId: { type: Type.STRING },
             dashboardData: {
               type: Type.OBJECT,
               properties: {
                 title: { type: Type.STRING },
-                metrics: {
+                metrics: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { label: { type: Type.STRING }, value: { type: Type.STRING }, change: { type: Type.STRING }, trend: { type: Type.STRING } } } },
+                paymentMethodDistribution: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { label: { type: Type.STRING }, value: { type: Type.NUMBER }, color: { type: Type.STRING } } } },
+                topCustomers: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { label: { type: Type.STRING }, value: { type: Type.NUMBER } } } }
+              }
+            },
+            reconciliationData: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                period: { type: Type.STRING },
+                summary: {
+                  type: Type.OBJECT,
+                  properties: {
+                    totalExpected: { type: Type.NUMBER },
+                    totalReceived: { type: Type.NUMBER },
+                    outstanding: { type: Type.NUMBER },
+                    reconciliationRate: { type: Type.NUMBER }
+                  }
+                },
+                aging: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: { label: { type: Type.STRING }, value: { type: Type.NUMBER }, count: { type: Type.NUMBER } }
+                  }
+                },
+                discrepancies: {
                   type: Type.ARRAY,
                   items: {
                     type: Type.OBJECT,
                     properties: {
-                      label: { type: Type.STRING },
-                      value: { type: Type.STRING },
-                      change: { type: Type.STRING },
-                      trend: { type: Type.STRING, enum: ["up", "down", "neutral"] }
+                      id: { type: Type.STRING }, reference: { type: Type.STRING }, expectedAmount: { type: Type.NUMBER }, receivedAmount: { type: Type.NUMBER },
+                      customer: { type: Type.STRING }, date: { type: Type.STRING }, status: { type: Type.STRING, enum: ['Matched', 'Partial', 'Unmatched', 'Overdue'] }, method: { type: Type.STRING }
                     }
                   }
                 },
-                paymentMethodDistribution: {
+                methodBreakdown: {
                   type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      label: { type: Type.STRING },
-                      value: { type: Type.NUMBER },
-                      color: { type: Type.STRING }
-                    }
-                  }
-                },
-                topCustomers: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      label: { type: Type.STRING },
-                      value: { type: Type.NUMBER }
-                    }
-                  }
+                  items: { type: Type.OBJECT, properties: { label: { type: Type.STRING }, value: { type: Type.NUMBER }, color: { type: Type.STRING } } }
                 }
               }
             }
@@ -122,6 +124,18 @@ export const processUserPrompt = async (
       }
     });
 
+    let timeoutId: any;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error("Gemini Request Timeout")), 15000);
+    });
+
+    let response: any;
+    try {
+      response = await Promise.race([responsePromise, timeoutPromise]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
     const resultText = response.text;
     if (!resultText) {
       throw new Error("Empty response from AI");
@@ -129,7 +143,19 @@ export const processUserPrompt = async (
 
     const result = JSON.parse(resultText) as AIResponse;
 
-    // --- Post-Processing for Dashboard Data ---
+    if (result.type === 'RECONCILIATION_DASHBOARD' && result.reconciliationData) {
+      // Ensure data exists if AI hallucinated empty
+      if (!result.reconciliationData.aging) result.reconciliationData.aging = [];
+      if (!result.reconciliationData.methodBreakdown) {
+        result.reconciliationData.methodBreakdown = [
+          { label: 'Direct Debit', value: 85000, color: '#b91c1c' },
+          { label: 'Bank Transfer', value: 15000, color: '#6b7280' },
+          { label: 'ParentPay', value: 5000, color: '#9ca3af' }
+        ];
+      }
+    }
+
+    // --- Post-Processing for Standard Dashboard Data ---
     // The AI might not know the full dataset (since we only sent a slice).
     // We calculate the actual Top 5 Customers from the provided `allTransactions`
     // to ensure the chart is accurate and populated.
@@ -182,7 +208,46 @@ export const processUserPrompt = async (
 
   } catch (error) {
     console.error("Error processing with Gemini:", error);
-    // Fallback logic
+
+    // Check if this was a reconciliation request - provide mock data as fallback
+    const isReconciliationRequest = /reconcil|payment track|debt|chasing/i.test(query);
+    if (isReconciliationRequest) {
+      console.log("Falling back to mock reconciliation data");
+      return {
+        type: 'RECONCILIATION_DASHBOARD',
+        reconciliationData: {
+          title: 'Wetherby School Fee Reconciliation',
+          period: 'December 2025',
+          summary: {
+            totalExpected: 152400,
+            totalReceived: 124800,
+            outstanding: 27600,
+            reconciliationRate: 81.9
+          },
+          aging: [
+            { label: '< 30 Days', value: 8500, count: 12 },
+            { label: '30-60 Days', value: 11200, count: 8 },
+            { label: '60-90 Days', value: 5400, count: 4 },
+            { label: '> 90 Days', value: 2500, count: 2 }
+          ],
+          discrepancies: [
+            { id: 'D001', reference: 'INV-2025-1201', expectedAmount: 4200, receivedAmount: 2100, customer: 'Thompson Family', date: '2025-12-01', status: 'Partial' as const, method: 'Direct Debit' },
+            { id: 'D002', reference: 'INV-2025-1202', expectedAmount: 3800, receivedAmount: 0, customer: 'Harrison Parents', date: '2025-12-02', status: 'Overdue' as const, method: 'Bank Transfer' },
+            { id: 'D003', reference: 'INV-2025-1205', expectedAmount: 4500, receivedAmount: 4500, customer: 'Chen Family', date: '2025-12-05', status: 'Unmatched' as const, method: 'ParentPay' },
+            { id: 'D004', reference: 'INV-2025-1208', expectedAmount: 3200, receivedAmount: 0, customer: 'Williams Estate', date: '2025-12-08', status: 'Overdue' as const, method: 'Direct Debit' },
+            { id: 'D005', reference: 'INV-2025-1210', expectedAmount: 5100, receivedAmount: 2550, customer: 'Patel Family', date: '2025-12-10', status: 'Partial' as const, method: 'Bank Transfer' },
+            { id: 'D006', reference: 'INV-2025-1215', expectedAmount: 4800, receivedAmount: 0, customer: 'O\'Brien Parents', date: '2025-12-15', status: 'Overdue' as const, method: 'Direct Debit' }
+          ],
+          methodBreakdown: [
+            { label: 'Direct Debit', value: 89500, color: '#b91c1c' },
+            { label: 'Bank Transfer', value: 24300, color: '#6b7280' },
+            { label: 'ParentPay', value: 11000, color: '#9ca3af' }
+          ]
+        }
+      };
+    }
+
+    // Fallback for other queries
     const isDashboardRequest = /dashboard|summary|report|chart/i.test(query);
     if (isDashboardRequest) {
       return { type: 'FILTER', filteredIds: allTransactions.map(t => t.id) };

@@ -49,9 +49,42 @@ export interface DashboardData {
   topCustomers: BarData[];
 }
 
+export interface ReconciliationItem {
+  id: string;
+  reference: string;
+  expectedAmount: number;
+  receivedAmount: number;
+  customer: string;
+  date: string;
+  status: 'Matched' | 'Partial' | 'Unmatched' | 'Overdue';
+  method: string;
+  notes?: string;
+}
+
+export interface AgingBucket {
+  label: string;
+  value: number;
+  count: number;
+}
+
+export interface ReconciliationData {
+  title: string;
+  period: string;
+  summary: {
+    totalExpected: number;
+    totalReceived: number;
+    outstanding: number;
+    reconciliationRate: number;
+  };
+  aging: AgingBucket[];
+  discrepancies: ReconciliationItem[];
+  methodBreakdown: ChartSegment[];
+}
+
 export interface AIResponse {
-  type: 'FILTER' | 'DASHBOARD' | 'DETAILS';
+  type: 'FILTER' | 'DASHBOARD' | 'DETAILS' | 'RECONCILIATION_DASHBOARD';
   filteredIds?: string[];
   dashboardData?: DashboardData;
+  reconciliationData?: ReconciliationData;
   detailsId?: string;
 }

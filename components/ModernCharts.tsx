@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#6366F1', '#EC4899'];
+const COLORS = ['#3B82F6', '#b91c1c', '#F59E0B', '#6366F1', '#EC4899'];
 
 // --- Custom Tooltip ---
 const CustomTooltip = ({ active, payload, label }: any) => {

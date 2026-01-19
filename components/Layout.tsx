@@ -39,13 +39,13 @@ export const Layout = ({ children }: LayoutProps) => {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Top Header Bar */}
-            <header className="bg-[rgb(184,198,90)] text-white h-[60px] flex items-center justify-between px-6 flex-shrink-0 shadow-md">
+            <header className="bg-[#b91c1c] text-white h-[60px] flex items-center justify-between px-6 flex-shrink-0 shadow-md">
                 {/* Left: Company Name with Dropdown */}
                 <div className="flex items-center space-x-2 cursor-pointer hover:opacity-90 transition-opacity">
                     <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center">
-                        <span className="text-[rgb(184,198,90)] text-sm font-bold">🐘</span>
+                        <span className="text-[#b91c1c] text-sm font-bold">🐘</span>
                     </div>
-                    <span className="font-semibold text-base">Little Green Elephants</span>
+                    <span className="font-semibold text-base">Wetherby School</span>
                     <IconChevronDown className="w-4 h-4" />
                 </div>
 
@@ -98,11 +98,11 @@ export const Layout = ({ children }: LayoutProps) => {
                                 <button
                                     key={item.label}
                                     className={`w-full flex items-center space-x-3 px-6 py-3 text-sm font-medium transition-colors ${item.active
-                                            ? 'bg-[#E8F5C8] text-gray-900 border-l-4 border-[#8DB93C]'
-                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                        ? 'bg-red-50 text-red-900 border-l-4 border-[#b91c1c]'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                         }`}
                                 >
-                                    <Icon className={`w-5 h-5 ${item.active ? 'text-[#8DB93C]' : 'text-gray-400'}`} />
+                                    <Icon className={`w-5 h-5 ${item.active ? 'text-[#b91c1c]' : 'text-gray-400'}`} />
                                     <span>{item.label}</span>
                                 </button>
                             );

@@ -48,6 +48,10 @@ export const IconVisa = ({ className }: { className?: string }) => (
   <img src="/assets/visa-logo.png" alt="Visa" className={className} style={{ height: '11px', width: 'auto' }} />
 );
 
+export const IconBarclays = ({ className }: { className?: string }) => (
+  <img src="/assets/barclays-logo.png" alt="Barclays" className={className} style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
+);
+
 export const IconMastercard = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 18" className={className} fill="none">
     <circle cx="7" cy="9" r="7" fill="#EB001B" />

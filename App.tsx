@@ -423,7 +423,7 @@ export default function App() {
             </div>
 
             {/* AI Search Bar */}
-            <div className="relative w-[780px] z-20" ref={toolsDropdownRef}>
+            <div className="relative w-full max-w-[560px] z-20" ref={toolsDropdownRef}>
               <div className={`relative bg-white border border-slate-300 rounded-lg shadow-sm transition-all duration-300 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-100 ${selectedTool ? 'pb-2' : ''}`}>
                 <div className="relative flex items-center">
                   <div className="absolute left-4 flex items-center pointer-events-none">
